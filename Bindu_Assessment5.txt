@@ -1,0 +1,145 @@
+1.To create table with same structure with data
+CREATE TABLE customers_payment AS (
+SELECT * FROM customer_details);
+
+2.To create table with same structure without data
+CREATE TABLE customer_payment SELECT * FROM customer_details;
+SELECT * FROM new_table;
+
+3.Last 10 records from Student table:
+SELECT * FROM  ( 
+SELECT * FROM Student ORDER BY Student_ID DESC LIMIT 10) Var1 ORDER BY Student_ID ASC;
+
+Maximum salary and minimum salary of Employee:
+SELECT Employee_name,MAX(salary), MIN(salary) from Employee;
+
+4.Create a SQL Table and Read it’s record by using Template
+
+from jinja2 import Template
+name = input("Enter your name: ")
+tm = Template("Hello {{ name }}")
+msg = tm.render(name=name)
+print(msg)
+from jinjasql import JinjaSql
+from six import string_types
+from copy import deepcopy
+user_transaction_template = '''
+select 
+    user_id
+    , count(*) as num_transactions
+    , sum(amount) as total_amount
+from 
+    transactions
+where
+    user_id = 1234
+    and transaction_date = '2022-03-02'
+group by
+    user_id
+'''
+params = {
+    'user_id': 1234,
+    'transaction_date': '2022-03-02'
+}
+j = JinjaSql(param_style='pyformat')
+query,bind_params = j.prepare_query(user_transaction_template,params)
+print(query)
+
+
+5. Students whose name starts with P and surname starts with S.
+SELECT * FROM STUDENTS 
+where firstname LIKE 'P%' AND surname LIKE 'S%';
+
+6. To fetch last record from Student table:
+Create Table Student(Student_ID int, first_name varchar(40), last_name varchar(40), age int);
+SELECT TOP 1 first_name, last_name from Student order by Student_ID Desc;// based on ID
+
+SELECT LAST() FROM Student;//last record in the table
+
+7.Example with Sample Data for Common Table Expression
+CREATE TABLE Employees(
+    EmployeeID int NOT NULL PRIMARY KEY,
+    FirstName varchar(50) NOT NULL,
+    LastName varchar(50) NOT NULL,
+    ManagerID int NULL
+)
+INSERT INTO Employees VALUES(1,'Siddhant','Sharma',NULL)
+INSERT INTO Employees VALUES(2,'Sri','Harsha',1)
+INSERT INTO Employees VALUES(3,'Antrixsh','gupta',1)
+INSERT INTO Employees VALUES(4,'Prajakta','Sharma',2)
+INSERT INTO Employees VALUES(5,'Govind','Kumar',2)
+INSERT INTO Employees VALUES(6,'Bhargav','Kumar',3)
+INSERT INTO Employees VALUES(7,'Nirupama','Ponnapudi',3)
+INSERT INTO Employees VALUES(8,'Amogh','Kumar',5)
+INSERT INTO Employees VALUES(9,'Vikas','Goyal',6)
+INSERT INTO Employees VALUES(10,'Naga','Sowmya',6)
+
+select *from Employees;
+
+WITH
+    cteReports(EmpID, FirstName, LastName, MgrID, EmpLevel)
+    AS
+    (
+        SELECT EmployeeID, FirstName, LastName, ManagerID,1
+        From Employees
+        Where ManagerID is NULL
+        UNION ALL
+        SELECT e.EmployeeID, e.FirstName, e.LastName, e.ManagerID, r.EmpLevel + 1
+        FROM Employees e 
+            INNER JOIN cteReports r 
+            ON e.ManagerID = r.EmpID
+    )
+
+    SELECT 
+        FirstName + ' ' + LastName AS FullName,
+        EmpLevel,
+        (Select FirstName + ' ' + LastName AS FullName FROM Employees
+            WHERE EmployeeID = cteReports.MgrID) AS ManagerID
+            From cteReports
+            Order BY EmpLevel,MgrID
+
+
+8.Give a Example of Trigger Update & Delete Event
+TRIGGER:
+CREATE TRIGGER [dbo].[Customer_UPDATE]
+       ON [dbo].[Customers]
+AFTER UPDATE
+AS
+BEGIN
+       SET NOCOUNT ON;
+ 
+       DECLARE @CustomerId INT
+       DECLARE @Action VARCHAR(50)
+ 
+       SELECT @CustomerId = INSERTED.CustomerId       
+       FROM INSERTED
+ 
+       IF UPDATE(Name)
+       BEGIN
+              SET @Action = 'Updated Name'
+       END
+ 
+       IF UPDATE(Country)
+       BEGIN
+              SET @Action = 'Updated Country'
+       END
+ 
+       INSERT INTO CustomerLogs
+       VALUES(@CustomerId, @Action)
+END
+
+Delete:
+CREATE TRIGGER [dbo].[Customer_DELETE]
+       ON [dbo].[Customers]
+AFTER DELETE
+AS
+BEGIN
+       SET NOCOUNT ON;
+ 
+       DECLARE @CustomerId INT
+ 
+       SELECT @CustomerId = DELETED.CustomerId       
+       FROM DELETED
+ 
+       INSERT INTO CustomerLogs
+       VALUES(@CustomerId, 'Deleted')
+END
